@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger</title>
+    <!-- Add Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f5f5;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .btn.compress {
+            background-color: #27ae60;
+            margin-left: 1rem;
+        }
+
+        .btn.compress:hover {
+            background-color: #219a52;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .flash-messages {
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .flash {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .flash.error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .flash.success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .selected-files {
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .file-list {
+            list-style: none;
+            margin-top: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .file-list li {
+            background-color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            height: 56px;
+        }
+
+        .file-list li:hover {
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-list li.selected {
+            background-color: #e74c3c !important;
+            color: white !important;
+            border-color: #e74c3c !important;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2) !important;
+        }
+
+        .file-list li .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-grow: 1;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .file-list li .file-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .file-list li.selected .file-icon {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+        }
+
+        .file-list li .file-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .file-list li.selected .file-name {
+            color: white !important;
+        }
+
+        .file-list li .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.4rem;
+            font-size: 1.1rem;
+            color: #666;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            margin-left: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .file-list li .btn-icon:hover {
+            color: var(--error-color);
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        .file-list li.selected .btn-icon {
+            color: white !important;
+        }
+
+        .file-list li.selected .btn-icon:hover {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.658) !important;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border: 2px dashed #e0e0e0;
+        }
+
+        .empty-message i {
+            font-size: 2rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .reorder-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .reorder-controls .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+        }
+
+        .reorder-controls .btn-icon:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .reorder-controls .btn-icon:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: var(--secondary-color);
+            color: #999;
+            transform: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Merger</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form action="/" method="post" enctype="multipart/form-data" id="upload-form">
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">📄</div>
+                <p>Drag and drop PDF files here or click to select</p>
+                <input type="file" name="files[]" multiple accept=".pdf" class="file-input" id="file-input">
+            </div>
+            <div class="selected-files" id="file-list">
+                <div class="empty-message">No files selected. Drag and drop PDF files or click to select.</div>
+            </div>
+            <div class="reorder-controls">
+                <button type="button" class="btn-icon" onclick="moveSelectedFile(-1)" id="move-up-btn" disabled>
+                    <i class="bi bi-arrow-up-circle"></i>
+                </button>
+                <button type="button" class="btn-icon" onclick="moveSelectedFile(1)" id="move-down-btn" disabled>
+                    <i class="bi bi-arrow-down-circle"></i>
+                </button>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn">Merge PDFs</button>
+                <button type="button" class="btn compress" onclick="compressPDFs()">Merge & Compress PDFs</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const form = document.getElementById('upload-form');
+        const moveUpBtn = document.getElementById('move-up-btn');
+        const moveDownBtn = document.getElementById('move-down-btn');
+        let files = [];
+        let selectedIndex = -1;
+
+        // Handle file selection
+        fileInput.addEventListener('change', handleFiles);
+
+        // Handle drag and drop for file upload
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#f0f0f0';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '';
+            const droppedFiles = e.dataTransfer.files;
+            fileInput.files = droppedFiles;
+            handleFiles();
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function handleFiles() {
+            const newFiles = Array.from(fileInput.files);
+            files = [...files, ...newFiles];
+            updateFileList();
+        }
+
+        function updateFileList() {
+            if (files.length === 0) {
+                fileList.innerHTML = `
+                    <div class="empty-message">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        <p>No files selected. Drag and drop PDF files or click to select.</p>
+                    </div>`;
+                moveUpBtn.disabled = true;
+                moveDownBtn.disabled = true;
+                return;
+            }
+
+            fileList.innerHTML = '<h3>Selected Files:</h3><ul class="file-list">';
+            
+            files.forEach((file, index) => {
+                if (file.type === 'application/pdf') {
+                    // Truncate filename if it's longer than 200 characters
+                    let fileName = file.name;
+                    if (fileName.length > 200) {
+                        const extension = fileName.split('.').pop();
+                        const nameWithoutExt = fileName.slice(0, -(extension.length + 1));
+                        fileName = nameWithoutExt.slice(0, 196) + '...' + '.' + extension;
+                    }
+                    
+                    fileList.innerHTML += `
+                        <li data-index="${index}" class="${index === selectedIndex ? 'selected' : ''}" onclick="selectFile(${index})">
+                            <div class="file-info">
+                                <div class="file-icon">
+                                    <i class="bi bi-file-pdf"></i>
+                                </div>
+                                <span class="file-name" title="${file.name}">${fileName}</span>
+                            </div>
+                            <button class="btn-icon" onclick="removeFile(${index}, event)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </li>
+                    `;
+                }
+            });
+            
+            fileList.innerHTML += '</ul>';
+
+            // Update button states
+            moveUpBtn.disabled = selectedIndex === -1 || selectedIndex === 0;
+            moveDownBtn.disabled = selectedIndex === -1 || selectedIndex === files.length - 1;
+        }
+
+        function selectFile(index) {
+            selectedIndex = index;
+            updateFileList();
+        }
+
+        function moveSelectedFile(direction) {
+            if (selectedIndex === -1) return;
+            
+            const newIndex = selectedIndex + direction;
+            if (newIndex >= 0 && newIndex < files.length) {
+                // Swap files
+                [files[selectedIndex], files[newIndex]] = [files[newIndex], files[selectedIndex]];
+                selectedIndex = newIndex;
+                updateFileList();
+            }
+        }
+
+        function removeFile(index, event) {
+            event.stopPropagation(); // Prevent file selection when clicking remove
+            files.splice(index, 1);
+            if (selectedIndex === index) {
+                selectedIndex = -1;
+            } else if (selectedIndex > index) {
+                selectedIndex--;
+            }
+            updateFileList();
+        }
+
+        function compressPDFs() {
+            if (files.length === 0) {
+                alert('Please select at least one PDF file.');
+                return;
+            }
+
+            const formData = new FormData();
+            files.forEach(file => {
+                formData.append('files[]', file);
+            });
+            formData.append('action', 'compress');
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'compressed.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while compressing the PDF.');
+            });
+        }
+
+        // Form submission
+        form.addEventListener('submit', (e) => {
+            if (files.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one PDF file.');
+            }
+        });
+    </script>
+</body>
+</html> 
